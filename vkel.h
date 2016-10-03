@@ -151,7 +151,7 @@ extern "C" {
     #define VKAPI_PTR  VKAPI_CALL
 #elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH < 7
     #error "Vulkan isn't supported for the 'armeabi' NDK ABI"
-#elif defined(__ANDROID__) && __ARM_ARCH >= 7 && __ARM_32BIT_STATE
+#elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && __ARM_32BIT_STATE
     // On Android 32-bit ARM targets, Vulkan functions use the "hardfloat"
     // calling convention, i.e. float parameters are passed in registers. This
     // is true even if the rest of the application passes floats on the stack,
@@ -217,16 +217,18 @@ extern "C" {
 #define VK_VERSION_MAJOR(version) ((uint32_t)(version) >> 22)
 #define VK_VERSION_MINOR(version) (((uint32_t)(version) >> 12) & 0x3ff)
 #define VK_VERSION_PATCH(version) ((uint32_t)(version) & 0xfff)
-#define VK_HEADER_VERSION 24
+#define VK_HEADER_VERSION 26
 
 #define VK_NULL_HANDLE 0
 
 #define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
 
+#if !defined(VK_DEFINE_NON_DISPATCHABLE_HANDLE)
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__) ) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
         #define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef struct object##_T *object;
 #else
         #define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef uint64_t object;
+#endif
 #endif
 
 typedef uint32_t VkFlags;
@@ -385,6 +387,11 @@ typedef enum VkStructureType {
     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV = 1000026000,
     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV = 1000026001,
     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV = 1000026002,
+    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV = 1000056000,
+    VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV = 1000056001,
+    VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV = 1000057000,
+    VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV = 1000057001,
+    VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV = 1000058000,
     VK_STRUCTURE_TYPE_BEGIN_RANGE = VK_STRUCTURE_TYPE_APPLICATION_INFO,
     VK_STRUCTURE_TYPE_END_RANGE = VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO,
     VK_STRUCTURE_TYPE_RANGE_SIZE = (VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO - VK_STRUCTURE_TYPE_APPLICATION_INFO + 1),
@@ -3077,9 +3084,104 @@ typedef struct VkDedicatedAllocationMemoryAllocateInfoNV {
     VkBuffer           buffer;
 } VkDedicatedAllocationMemoryAllocateInfoNV;
 
+#define VK_AMD_draw_indirect_count 1
+#define VK_AMD_EXTENSION_DRAW_INDIRECT_COUNT_SPEC_VERSION 1
+#define VK_AMD_EXTENSION_DRAW_INDIRECT_COUNT_EXTENSION_NAME "VK_AMD_draw_indirect_count"
+
+typedef void (VKAPI_PTR *PFN_vkCmdDrawIndirectCountAMD)(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride);
+typedef void (VKAPI_PTR *PFN_vkCmdDrawIndexedIndirectCountAMD)(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride);
+
 #define VK_IMG_format_pvrtc 1
 #define VK_IMG_FORMAT_PVRTC_SPEC_VERSION  1
 #define VK_IMG_FORMAT_PVRTC_EXTENSION_NAME "VK_IMG_format_pvrtc"
+
+#define VK_NV_external_memory_capabilities 1
+#define VK_NV_EXTERNAL_MEMORY_CAPABILITIES_SPEC_VERSION 1
+#define VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME "VK_NV_external_memory_capabilities"
+
+typedef enum VkExternalMemoryHandleTypeFlagBitsNV {
+    VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV = 0x00000001,
+    VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_NV = 0x00000002,
+    VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV = 0x00000004,
+    VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_KMT_BIT_NV = 0x00000008,
+    VK_EXTERNAL_MEMORY_HANDLE_TYPE_FLAG_BITS_MAX_ENUM_NV = 0x7FFFFFFF
+} VkExternalMemoryHandleTypeFlagBitsNV;
+typedef VkFlags VkExternalMemoryHandleTypeFlagsNV;
+
+typedef enum VkExternalMemoryFeatureFlagBitsNV {
+    VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_NV = 0x00000001,
+    VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV = 0x00000002,
+    VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_NV = 0x00000004,
+    VK_EXTERNAL_MEMORY_FEATURE_FLAG_BITS_MAX_ENUM_NV = 0x7FFFFFFF
+} VkExternalMemoryFeatureFlagBitsNV;
+typedef VkFlags VkExternalMemoryFeatureFlagsNV;
+
+typedef struct VkExternalImageFormatPropertiesNV {
+    VkImageFormatProperties              imageFormatProperties;
+    VkExternalMemoryFeatureFlagsNV       externalMemoryFeatures;
+    VkExternalMemoryHandleTypeFlagsNV    exportFromImportedHandleTypes;
+    VkExternalMemoryHandleTypeFlagsNV    compatibleHandleTypes;
+} VkExternalImageFormatPropertiesNV;
+
+typedef VkResult (VKAPI_PTR *PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV)(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType, VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties);
+
+#define VK_NV_external_memory 1
+#define VK_NV_EXTERNAL_MEMORY_SPEC_VERSION 1
+#define VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME "VK_NV_external_memory"
+
+typedef struct VkExternalMemoryImageCreateInfoNV {
+    VkStructureType                      sType;
+    const void*                          pNext;
+    VkExternalMemoryHandleTypeFlagsNV    handleTypes;
+} VkExternalMemoryImageCreateInfoNV;
+
+typedef struct VkExportMemoryAllocateInfoNV {
+    VkStructureType                      sType;
+    const void*                          pNext;
+    VkExternalMemoryHandleTypeFlagsNV    handleTypes;
+} VkExportMemoryAllocateInfoNV;
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+#define VK_NV_external_memory_win32 1
+#define VK_NV_EXTERNAL_MEMORY_WIN32_SPEC_VERSION 1
+#define VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_NV_external_memory_win32"
+
+typedef struct VkImportMemoryWin32HandleInfoNV {
+    VkStructureType                      sType;
+    const void*                          pNext;
+    VkExternalMemoryHandleTypeFlagsNV    handleType;
+    HANDLE                               handle;
+} VkImportMemoryWin32HandleInfoNV;
+
+typedef struct VkExportMemoryWin32HandleInfoNV {
+    VkStructureType               sType;
+    const void*                   pNext;
+    const SECURITY_ATTRIBUTES*    pAttributes;
+    DWORD                         dwAccess;
+} VkExportMemoryWin32HandleInfoNV;
+
+typedef VkResult (VKAPI_PTR *PFN_vkGetMemoryWin32HandleNV)(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle);
+
+#endif 
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+#define VK_NV_win32_keyed_mutex 1
+#define VK_NV_WIN32_KEYED_MUTEX_SPEC_VERSION 1
+#define VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME "VK_NV_win32_keyed_mutex"
+
+typedef struct VkWin32KeyedMutexAcquireReleaseInfoNV {
+    VkStructureType          sType;
+    const void*              pNext;
+    uint32_t                 acquireCount;
+    const VkDeviceMemory*    pAcquireSyncs;
+    const uint64_t*          pAcquireKeys;
+    const uint32_t*          pAcquireTimeoutMilliseconds;
+    uint32_t                 releaseCount;
+    const VkDeviceMemory*    pReleaseSyncs;
+    const uint64_t*          pReleaseKeys;
+} VkWin32KeyedMutexAcquireReleaseInfoNV;
+
+#endif 
 
 #endif
 
@@ -3122,6 +3224,7 @@ extern void vkelUninit(void);
 
 
 // Instance and device extension names
+extern VkBool32 VKEL_AMD_draw_indirect_count;
 extern VkBool32 VKEL_AMD_gcn_shader;
 extern VkBool32 VKEL_AMD_rasterization_order;
 extern VkBool32 VKEL_AMD_shader_explicit_vertex_parameter;
@@ -3142,7 +3245,11 @@ extern VkBool32 VKEL_KHR_win32_surface;
 extern VkBool32 VKEL_KHR_xcb_surface;
 extern VkBool32 VKEL_KHR_xlib_surface;
 extern VkBool32 VKEL_NV_dedicated_allocation;
+extern VkBool32 VKEL_NV_external_memory;
+extern VkBool32 VKEL_NV_external_memory_capabilities;
+extern VkBool32 VKEL_NV_external_memory_win32;
 extern VkBool32 VKEL_NV_glsl_shader;
+extern VkBool32 VKEL_NV_win32_keyed_mutex;
 
 // Instance and device layer names
 extern VkBool32 VKEL_LAYER_GOOGLE_unique_objects;
@@ -3191,7 +3298,9 @@ extern PFN_vkCmdDispatchIndirect __vkCmdDispatchIndirect;
 extern PFN_vkCmdDraw __vkCmdDraw;
 extern PFN_vkCmdDrawIndexed __vkCmdDrawIndexed;
 extern PFN_vkCmdDrawIndexedIndirect __vkCmdDrawIndexedIndirect;
+extern PFN_vkCmdDrawIndexedIndirectCountAMD __vkCmdDrawIndexedIndirectCountAMD;
 extern PFN_vkCmdDrawIndirect __vkCmdDrawIndirect;
+extern PFN_vkCmdDrawIndirectCountAMD __vkCmdDrawIndirectCountAMD;
 extern PFN_vkCmdEndQuery __vkCmdEndQuery;
 extern PFN_vkCmdEndRenderPass __vkCmdEndRenderPass;
 extern PFN_vkCmdExecuteCommands __vkCmdExecuteCommands;
@@ -3295,6 +3404,7 @@ extern PFN_vkGetImageSubresourceLayout __vkGetImageSubresourceLayout;
 extern PFN_vkGetInstanceProcAddr __vkGetInstanceProcAddr;
 extern PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR __vkGetPhysicalDeviceDisplayPlanePropertiesKHR;
 extern PFN_vkGetPhysicalDeviceDisplayPropertiesKHR __vkGetPhysicalDeviceDisplayPropertiesKHR;
+extern PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV __vkGetPhysicalDeviceExternalImageFormatPropertiesNV;
 extern PFN_vkGetPhysicalDeviceFeatures __vkGetPhysicalDeviceFeatures;
 extern PFN_vkGetPhysicalDeviceFormatProperties __vkGetPhysicalDeviceFormatProperties;
 extern PFN_vkGetPhysicalDeviceImageFormatProperties __vkGetPhysicalDeviceImageFormatProperties;
@@ -3347,6 +3457,7 @@ extern PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR __vkGetPhysicalDevic
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 extern PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR;
+extern PFN_vkGetMemoryWin32HandleNV __vkGetMemoryWin32HandleNV;
 extern PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR __vkGetPhysicalDeviceWin32PresentationSupportKHR;
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 
@@ -3391,7 +3502,9 @@ extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR __vkGetPhysicalDeviceXl
 #define vkCmdDraw __vkCmdDraw
 #define vkCmdDrawIndexed __vkCmdDrawIndexed
 #define vkCmdDrawIndexedIndirect __vkCmdDrawIndexedIndirect
+#define vkCmdDrawIndexedIndirectCountAMD __vkCmdDrawIndexedIndirectCountAMD
 #define vkCmdDrawIndirect __vkCmdDrawIndirect
+#define vkCmdDrawIndirectCountAMD __vkCmdDrawIndirectCountAMD
 #define vkCmdEndQuery __vkCmdEndQuery
 #define vkCmdEndRenderPass __vkCmdEndRenderPass
 #define vkCmdExecuteCommands __vkCmdExecuteCommands
@@ -3495,6 +3608,7 @@ extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR __vkGetPhysicalDeviceXl
 #define vkGetInstanceProcAddr __vkGetInstanceProcAddr
 #define vkGetPhysicalDeviceDisplayPlanePropertiesKHR __vkGetPhysicalDeviceDisplayPlanePropertiesKHR
 #define vkGetPhysicalDeviceDisplayPropertiesKHR __vkGetPhysicalDeviceDisplayPropertiesKHR
+#define vkGetPhysicalDeviceExternalImageFormatPropertiesNV __vkGetPhysicalDeviceExternalImageFormatPropertiesNV
 #define vkGetPhysicalDeviceFeatures __vkGetPhysicalDeviceFeatures
 #define vkGetPhysicalDeviceFormatProperties __vkGetPhysicalDeviceFormatProperties
 #define vkGetPhysicalDeviceImageFormatProperties __vkGetPhysicalDeviceImageFormatProperties
@@ -3543,6 +3657,7 @@ extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR __vkGetPhysicalDeviceXl
 
 // VK_USE_PLATFORM_WIN32_KHR
 #define vkCreateWin32SurfaceKHR NULL
+#define vkGetMemoryWin32HandleNV NULL
 #define vkGetPhysicalDeviceWin32PresentationSupportKHR NULL
 
 // VK_USE_PLATFORM_XCB_KHR
@@ -3574,8 +3689,10 @@ extern PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR __vkGetPhysicalDeviceXl
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #undef vkCreateWin32SurfaceKHR
+#undef vkGetMemoryWin32HandleNV
 #undef vkGetPhysicalDeviceWin32PresentationSupportKHR
 #define vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR
+#define vkGetMemoryWin32HandleNV __vkGetMemoryWin32HandleNV
 #define vkGetPhysicalDeviceWin32PresentationSupportKHR __vkGetPhysicalDeviceWin32PresentationSupportKHR
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 

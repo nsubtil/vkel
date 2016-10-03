@@ -149,6 +149,7 @@ static void *vkelVkLibHandle;
 
 
 // Instance and device extension names
+VkBool32 VKEL_AMD_draw_indirect_count;
 VkBool32 VKEL_AMD_gcn_shader;
 VkBool32 VKEL_AMD_rasterization_order;
 VkBool32 VKEL_AMD_shader_explicit_vertex_parameter;
@@ -169,7 +170,11 @@ VkBool32 VKEL_KHR_win32_surface;
 VkBool32 VKEL_KHR_xcb_surface;
 VkBool32 VKEL_KHR_xlib_surface;
 VkBool32 VKEL_NV_dedicated_allocation;
+VkBool32 VKEL_NV_external_memory;
+VkBool32 VKEL_NV_external_memory_capabilities;
+VkBool32 VKEL_NV_external_memory_win32;
 VkBool32 VKEL_NV_glsl_shader;
+VkBool32 VKEL_NV_win32_keyed_mutex;
 
 // Instance and device layer names
 VkBool32 VKEL_LAYER_GOOGLE_unique_objects;
@@ -218,7 +223,9 @@ PFN_vkCmdDispatchIndirect __vkCmdDispatchIndirect;
 PFN_vkCmdDraw __vkCmdDraw;
 PFN_vkCmdDrawIndexed __vkCmdDrawIndexed;
 PFN_vkCmdDrawIndexedIndirect __vkCmdDrawIndexedIndirect;
+PFN_vkCmdDrawIndexedIndirectCountAMD __vkCmdDrawIndexedIndirectCountAMD;
 PFN_vkCmdDrawIndirect __vkCmdDrawIndirect;
+PFN_vkCmdDrawIndirectCountAMD __vkCmdDrawIndirectCountAMD;
 PFN_vkCmdEndQuery __vkCmdEndQuery;
 PFN_vkCmdEndRenderPass __vkCmdEndRenderPass;
 PFN_vkCmdExecuteCommands __vkCmdExecuteCommands;
@@ -322,6 +329,7 @@ PFN_vkGetImageSubresourceLayout __vkGetImageSubresourceLayout;
 PFN_vkGetInstanceProcAddr __vkGetInstanceProcAddr;
 PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR __vkGetPhysicalDeviceDisplayPlanePropertiesKHR;
 PFN_vkGetPhysicalDeviceDisplayPropertiesKHR __vkGetPhysicalDeviceDisplayPropertiesKHR;
+PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV __vkGetPhysicalDeviceExternalImageFormatPropertiesNV;
 PFN_vkGetPhysicalDeviceFeatures __vkGetPhysicalDeviceFeatures;
 PFN_vkGetPhysicalDeviceFormatProperties __vkGetPhysicalDeviceFormatProperties;
 PFN_vkGetPhysicalDeviceImageFormatProperties __vkGetPhysicalDeviceImageFormatProperties;
@@ -374,6 +382,7 @@ PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR __vkGetPhysicalDeviceWaylan
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkCreateWin32SurfaceKHR __vkCreateWin32SurfaceKHR;
+PFN_vkGetMemoryWin32HandleNV __vkGetMemoryWin32HandleNV;
 PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR __vkGetPhysicalDeviceWin32PresentationSupportKHR;
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 
@@ -779,7 +788,9 @@ VkBool32 vkelInit(void)
 	__vkCmdDraw = (PFN_vkCmdDraw) vkelGetProcAddr("vkCmdDraw");
 	__vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed) vkelGetProcAddr("vkCmdDrawIndexed");
 	__vkCmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect) vkelGetProcAddr("vkCmdDrawIndexedIndirect");
+	__vkCmdDrawIndexedIndirectCountAMD = (PFN_vkCmdDrawIndexedIndirectCountAMD) vkelGetProcAddr("vkCmdDrawIndexedIndirectCountAMD");
 	__vkCmdDrawIndirect = (PFN_vkCmdDrawIndirect) vkelGetProcAddr("vkCmdDrawIndirect");
+	__vkCmdDrawIndirectCountAMD = (PFN_vkCmdDrawIndirectCountAMD) vkelGetProcAddr("vkCmdDrawIndirectCountAMD");
 	__vkCmdEndQuery = (PFN_vkCmdEndQuery) vkelGetProcAddr("vkCmdEndQuery");
 	__vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass) vkelGetProcAddr("vkCmdEndRenderPass");
 	__vkCmdExecuteCommands = (PFN_vkCmdExecuteCommands) vkelGetProcAddr("vkCmdExecuteCommands");
@@ -883,6 +894,7 @@ VkBool32 vkelInit(void)
 	__vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vkelGetProcAddr("vkGetInstanceProcAddr");
 	__vkGetPhysicalDeviceDisplayPlanePropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR) vkelGetProcAddr("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
 	__vkGetPhysicalDeviceDisplayPropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR) vkelGetProcAddr("vkGetPhysicalDeviceDisplayPropertiesKHR");
+	__vkGetPhysicalDeviceExternalImageFormatPropertiesNV = (PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV) vkelGetProcAddr("vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
 	__vkGetPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures) vkelGetProcAddr("vkGetPhysicalDeviceFeatures");
 	__vkGetPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties) vkelGetProcAddr("vkGetPhysicalDeviceFormatProperties");
 	__vkGetPhysicalDeviceImageFormatProperties = (PFN_vkGetPhysicalDeviceImageFormatProperties) vkelGetProcAddr("vkGetPhysicalDeviceImageFormatProperties");
@@ -935,6 +947,7 @@ VkBool32 vkelInit(void)
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) vkelGetProcAddr("vkCreateWin32SurfaceKHR");
+	__vkGetMemoryWin32HandleNV = (PFN_vkGetMemoryWin32HandleNV) vkelGetProcAddr("vkGetMemoryWin32HandleNV");
 	__vkGetPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR) vkelGetProcAddr("vkGetPhysicalDeviceWin32PresentationSupportKHR");
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 
@@ -950,6 +963,7 @@ VkBool32 vkelInit(void)
 
 
 	// Instance and device extension names
+	VKEL_AMD_draw_indirect_count = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_draw_indirect_count");
 	VKEL_AMD_gcn_shader = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_gcn_shader");
 	VKEL_AMD_rasterization_order = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_rasterization_order");
 	VKEL_AMD_shader_explicit_vertex_parameter = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_shader_explicit_vertex_parameter");
@@ -970,7 +984,11 @@ VkBool32 vkelInit(void)
 	VKEL_KHR_xcb_surface = vkelIsInstanceExtensionSupported(NULL, "VK_KHR_xcb_surface");
 	VKEL_KHR_xlib_surface = vkelIsInstanceExtensionSupported(NULL, "VK_KHR_xlib_surface");
 	VKEL_NV_dedicated_allocation = vkelIsInstanceExtensionSupported(NULL, "VK_NV_dedicated_allocation");
+	VKEL_NV_external_memory = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory");
+	VKEL_NV_external_memory_capabilities = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory_capabilities");
+	VKEL_NV_external_memory_win32 = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory_win32");
 	VKEL_NV_glsl_shader = vkelIsInstanceExtensionSupported(NULL, "VK_NV_glsl_shader");
+	VKEL_NV_win32_keyed_mutex = vkelIsInstanceExtensionSupported(NULL, "VK_NV_win32_keyed_mutex");
 
 	// Instance and device layer names
 	VKEL_LAYER_GOOGLE_unique_objects = vkelIsInstanceLayerSupported("VK_LAYER_GOOGLE_unique_objects");
@@ -1027,7 +1045,9 @@ VkBool32 vkelInstanceInit(VkInstance instance)
 	__vkCmdDraw = (PFN_vkCmdDraw) vkelGetInstanceProcAddr(instance, "vkCmdDraw");
 	__vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed) vkelGetInstanceProcAddr(instance, "vkCmdDrawIndexed");
 	__vkCmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect) vkelGetInstanceProcAddr(instance, "vkCmdDrawIndexedIndirect");
+	__vkCmdDrawIndexedIndirectCountAMD = (PFN_vkCmdDrawIndexedIndirectCountAMD) vkelGetInstanceProcAddr(instance, "vkCmdDrawIndexedIndirectCountAMD");
 	__vkCmdDrawIndirect = (PFN_vkCmdDrawIndirect) vkelGetInstanceProcAddr(instance, "vkCmdDrawIndirect");
+	__vkCmdDrawIndirectCountAMD = (PFN_vkCmdDrawIndirectCountAMD) vkelGetInstanceProcAddr(instance, "vkCmdDrawIndirectCountAMD");
 	__vkCmdEndQuery = (PFN_vkCmdEndQuery) vkelGetInstanceProcAddr(instance, "vkCmdEndQuery");
 	__vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass) vkelGetInstanceProcAddr(instance, "vkCmdEndRenderPass");
 	__vkCmdExecuteCommands = (PFN_vkCmdExecuteCommands) vkelGetInstanceProcAddr(instance, "vkCmdExecuteCommands");
@@ -1131,6 +1151,7 @@ VkBool32 vkelInstanceInit(VkInstance instance)
 	__vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vkelGetInstanceProcAddr(instance, "vkGetInstanceProcAddr");
 	__vkGetPhysicalDeviceDisplayPlanePropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
 	__vkGetPhysicalDeviceDisplayPropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceDisplayPropertiesKHR");
+	__vkGetPhysicalDeviceExternalImageFormatPropertiesNV = (PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
 	__vkGetPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures");
 	__vkGetPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFormatProperties");
 	__vkGetPhysicalDeviceImageFormatProperties = (PFN_vkGetPhysicalDeviceImageFormatProperties) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceImageFormatProperties");
@@ -1183,6 +1204,7 @@ VkBool32 vkelInstanceInit(VkInstance instance)
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) vkelGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+	__vkGetMemoryWin32HandleNV = (PFN_vkGetMemoryWin32HandleNV) vkelGetInstanceProcAddr(instance, "vkGetMemoryWin32HandleNV");
 	__vkGetPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR) vkelGetInstanceProcAddr(instance, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 
@@ -1198,6 +1220,7 @@ VkBool32 vkelInstanceInit(VkInstance instance)
 
 
 	// Instance and device extension names
+	VKEL_AMD_draw_indirect_count = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_draw_indirect_count");
 	VKEL_AMD_gcn_shader = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_gcn_shader");
 	VKEL_AMD_rasterization_order = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_rasterization_order");
 	VKEL_AMD_shader_explicit_vertex_parameter = vkelIsInstanceExtensionSupported(NULL, "VK_AMD_shader_explicit_vertex_parameter");
@@ -1218,7 +1241,11 @@ VkBool32 vkelInstanceInit(VkInstance instance)
 	VKEL_KHR_xcb_surface = vkelIsInstanceExtensionSupported(NULL, "VK_KHR_xcb_surface");
 	VKEL_KHR_xlib_surface = vkelIsInstanceExtensionSupported(NULL, "VK_KHR_xlib_surface");
 	VKEL_NV_dedicated_allocation = vkelIsInstanceExtensionSupported(NULL, "VK_NV_dedicated_allocation");
+	VKEL_NV_external_memory = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory");
+	VKEL_NV_external_memory_capabilities = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory_capabilities");
+	VKEL_NV_external_memory_win32 = vkelIsInstanceExtensionSupported(NULL, "VK_NV_external_memory_win32");
 	VKEL_NV_glsl_shader = vkelIsInstanceExtensionSupported(NULL, "VK_NV_glsl_shader");
+	VKEL_NV_win32_keyed_mutex = vkelIsInstanceExtensionSupported(NULL, "VK_NV_win32_keyed_mutex");
 
 	// Instance and device layer names
 	VKEL_LAYER_GOOGLE_unique_objects = vkelIsInstanceLayerSupported("VK_LAYER_GOOGLE_unique_objects");
@@ -1275,7 +1302,9 @@ VkBool32 vkelDeviceInit(VkPhysicalDevice physicalDevice, VkDevice device)
 	__vkCmdDraw = (PFN_vkCmdDraw) vkelGetDeviceProcAddr(device, "vkCmdDraw");
 	__vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed) vkelGetDeviceProcAddr(device, "vkCmdDrawIndexed");
 	__vkCmdDrawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect) vkelGetDeviceProcAddr(device, "vkCmdDrawIndexedIndirect");
+	__vkCmdDrawIndexedIndirectCountAMD = (PFN_vkCmdDrawIndexedIndirectCountAMD) vkelGetDeviceProcAddr(device, "vkCmdDrawIndexedIndirectCountAMD");
 	__vkCmdDrawIndirect = (PFN_vkCmdDrawIndirect) vkelGetDeviceProcAddr(device, "vkCmdDrawIndirect");
+	__vkCmdDrawIndirectCountAMD = (PFN_vkCmdDrawIndirectCountAMD) vkelGetDeviceProcAddr(device, "vkCmdDrawIndirectCountAMD");
 	__vkCmdEndQuery = (PFN_vkCmdEndQuery) vkelGetDeviceProcAddr(device, "vkCmdEndQuery");
 	__vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass) vkelGetDeviceProcAddr(device, "vkCmdEndRenderPass");
 	__vkCmdExecuteCommands = (PFN_vkCmdExecuteCommands) vkelGetDeviceProcAddr(device, "vkCmdExecuteCommands");
@@ -1379,6 +1408,7 @@ VkBool32 vkelDeviceInit(VkPhysicalDevice physicalDevice, VkDevice device)
 	__vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vkelGetDeviceProcAddr(device, "vkGetInstanceProcAddr");
 	__vkGetPhysicalDeviceDisplayPlanePropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
 	__vkGetPhysicalDeviceDisplayPropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceDisplayPropertiesKHR");
+	__vkGetPhysicalDeviceExternalImageFormatPropertiesNV = (PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
 	__vkGetPhysicalDeviceFeatures = (PFN_vkGetPhysicalDeviceFeatures) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceFeatures");
 	__vkGetPhysicalDeviceFormatProperties = (PFN_vkGetPhysicalDeviceFormatProperties) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceFormatProperties");
 	__vkGetPhysicalDeviceImageFormatProperties = (PFN_vkGetPhysicalDeviceImageFormatProperties) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceImageFormatProperties");
@@ -1431,6 +1461,7 @@ VkBool32 vkelDeviceInit(VkPhysicalDevice physicalDevice, VkDevice device)
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 	__vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) vkelGetDeviceProcAddr(device, "vkCreateWin32SurfaceKHR");
+	__vkGetMemoryWin32HandleNV = (PFN_vkGetMemoryWin32HandleNV) vkelGetDeviceProcAddr(device, "vkGetMemoryWin32HandleNV");
 	__vkGetPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR) vkelGetDeviceProcAddr(device, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
 #endif /* VK_USE_PLATFORM_WIN32_KHR */
 
@@ -1446,6 +1477,7 @@ VkBool32 vkelDeviceInit(VkPhysicalDevice physicalDevice, VkDevice device)
 
 
 	// Instance and device extension names
+	VKEL_AMD_draw_indirect_count = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_AMD_draw_indirect_count");
 	VKEL_AMD_gcn_shader = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_AMD_gcn_shader");
 	VKEL_AMD_rasterization_order = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_AMD_rasterization_order");
 	VKEL_AMD_shader_explicit_vertex_parameter = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_AMD_shader_explicit_vertex_parameter");
@@ -1466,7 +1498,11 @@ VkBool32 vkelDeviceInit(VkPhysicalDevice physicalDevice, VkDevice device)
 	VKEL_KHR_xcb_surface = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_KHR_xcb_surface");
 	VKEL_KHR_xlib_surface = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_KHR_xlib_surface");
 	VKEL_NV_dedicated_allocation = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_dedicated_allocation");
+	VKEL_NV_external_memory = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_external_memory");
+	VKEL_NV_external_memory_capabilities = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_external_memory_capabilities");
+	VKEL_NV_external_memory_win32 = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_external_memory_win32");
 	VKEL_NV_glsl_shader = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_glsl_shader");
+	VKEL_NV_win32_keyed_mutex = vkelIsDeviceExtensionSupported(physicalDevice, NULL, "VK_NV_win32_keyed_mutex");
 
 	// Instance and device layer names
 	VKEL_LAYER_GOOGLE_unique_objects = vkelIsDeviceLayerSupported(physicalDevice, "VK_LAYER_GOOGLE_unique_objects");
